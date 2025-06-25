@@ -1,0 +1,59 @@
+name: Deploy RAAHi to AWS Lambda via SAM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      IMAGE_REPO_NAME: raahi-lambda
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+      IMAGE_TAG: latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REGISTRY/$IMAGE_REPO_NAME:$IMAGE_TAG .
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push $ECR_REGISTRY/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+      - name: Deploy to Lambda using SAM
+        uses: aws-actions/aws-sam-cli@v2
+        with:
+          sam-cli-version: latest
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: |
+          sam deploy --template-file template.yaml \
+            --stack-name raahi-lambda-stack \
+            --capabilities CAPABILITY_IAM \
+            --region $AWS_REGION \
+            --parameter-overrides ImageUri=$ECR_REGISTRY/$IMAGE_REPO_NAME:$IMAGE_TAG

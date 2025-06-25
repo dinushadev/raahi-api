@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS SAM template for deploying the RAAHi Spring Boot Lambda function
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 1024
+
+Resources:
+  RaahiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      ImageUri: <YOUR_ECR_IMAGE_URI>
+      FunctionName: raahi-lambda
+      Role: <YOUR_LAMBDA_EXECUTION_ROLE_ARN>
+      Environment:
+        Variables:
+          SPRING_PROFILES_ACTIVE: lambda
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+Outputs:
+  RaahiFunction:
+    Description: "RAAHi Lambda Function ARN"
+    Value: !GetAtt RaahiFunction.Arn
+  ApiUrl:
+    Description: "API Gateway endpoint URL for RAAHi Lambda"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
