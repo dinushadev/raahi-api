@@ -51,6 +51,7 @@ jobs:
           sam-cli-version: latest
         env:
           AWS_REGION: ${{ env.AWS_REGION }}
+      - name: SAM Deploy
         run: |
           sam deploy --template-file template.yaml \
             --stack-name raahi-lambda-stack \
