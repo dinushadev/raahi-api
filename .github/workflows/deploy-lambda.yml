@@ -45,16 +45,18 @@ jobs:
         run: |
           docker push $ECR_REGISTRY/$IMAGE_REPO_NAME:$IMAGE_TAG
 
-      - name: Deploy to Lambda using SAM
+      - name: Update SAM template with ECR image URI
+        run: |
+          sed -i 's|<YOUR_ECR_IMAGE_URI>|'$ECR_REGISTRY'/'$IMAGE_REPO_NAME':'$IMAGE_TAG'|g' template.yaml
+
+      - name: Install AWS SAM CLI
         uses: aws-actions/aws-sam-cli@v2
         with:
           sam-cli-version: latest
-        env:
-          AWS_REGION: ${{ env.AWS_REGION }}
+
       - name: SAM Deploy
         run: |
           sam deploy --template-file template.yaml \
             --stack-name raahi-lambda-stack \
             --capabilities CAPABILITY_IAM \
-            --region $AWS_REGION \
-            --parameter-overrides ImageUri=$ECR_REGISTRY/$IMAGE_REPO_NAME:$IMAGE_TAG
+            --region $AWS_REGION
