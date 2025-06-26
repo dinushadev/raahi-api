@@ -50,9 +50,8 @@ jobs:
           sed -i 's|<YOUR_ECR_IMAGE_URI>|'$ECR_REGISTRY'/'$IMAGE_REPO_NAME':'$IMAGE_TAG'|g' template.yaml
 
       - name: Install AWS SAM CLI
-        uses: aws-actions/aws-sam-cli@v2
-        with:
-          sam-cli-version: latest
+        run: |
+          pip install aws-sam-cli
 
       - name: SAM Deploy
         run: |
